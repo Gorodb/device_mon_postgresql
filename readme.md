@@ -1,0 +1,2 @@
+### yarn
+### npx sequelize init
