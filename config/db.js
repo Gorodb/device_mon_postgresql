@@ -1,5 +1,4 @@
 const { Pool } = require('pg')
-const colors = require('colors')
 
 const env = process.env
 
