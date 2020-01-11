@@ -8,6 +8,9 @@ const sendEmail = async (options) => {
         port: env.SMTP_PORT,
         host: env.SMTP_HOST,
         secure: true,
+        tls:{
+            rejectUnauthorized: false
+        },
         auth: {
             user: env.SMTP_EMAIL,
             pass: env.SMTP_PASSWORD
