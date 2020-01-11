@@ -157,6 +157,11 @@ exports.forgotPassword = asyncHandler(async(req, res, next) => {
             })
         } else {
             await TokenLinks.create({user_id: user.id, link: resetUrl, expiration_date: resetPasswordExpire})
+            await sendEmail({
+                email: user.email,
+                subject: 'Password reset token',
+                message
+            })
         }
         res.status(200).json({ success: true, data: 'Email отправлен' })
     } catch (err) {
