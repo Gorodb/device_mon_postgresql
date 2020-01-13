@@ -8,6 +8,7 @@ const ErrorResponse = require('../utils/errorResponse')
 const sendEmail = require('../utils/sendEmail')
 const asyncHandler = require('../middleware/async')
 const Users = database.Users
+const PinCodes = database.Pincodes
 const SessionsBlackList = database.SessionsBlackList
 const ResetTokens = database.ResetTokens
 const TokenLinks = database.TokensLinks
@@ -25,9 +26,59 @@ exports.register = asyncHandler(async(req, res, next) => {
         return next(new ErrorResponse(`Пользователь с email ${email} уже существует`, 400))
     }
 
-    const user = await Users.create({ name, email, phone, password, description, location, department_id })
+    let user = await Users.create({ name, email, phone, password, description, location, department_id })
+
+    await createPinCode(user.dataValues)
 
     sendTokenResponse(user, 200, res)
+})
+
+// @desc    Validate pin_code
+// @rout    POST /api/v1/auth/validate_pin
+// access   public
+exports.validatePinCode = asyncHandler(async(req, res, next) => {
+    let pinCode = req.body.pincode
+
+    if (!pinCode) {
+        return next(new ErrorResponse(`Необходимо указать пин-код`, 400))
+    }
+
+    let pin = await PinCodes.findOne({
+        where: {
+            user_id: req.user.id,
+            pin_code: pinCode
+        }
+    })
+
+    if (!pin) {
+        return next(new ErrorResponse(`Пин-код введен не верно`, 400))
+    } else if (pin.expiration_date < Date.now()) {
+        return next(new ErrorResponse(`Пин-код уже не действителен, запросите пин-код повторно`, 400))
+    }
+
+    await PinCodes.destroy({ where: { user_id: req.user.id }})
+    await Users.update({ is_email_confirmed: true }, { where: { id: req.user.id }})
+
+    res.status(200).json({ success: true, data: {} })
+})
+
+// @desc    Resend pin_code
+// @rout    POST /api/v1/auth/resend_pin
+// access   public
+exports.resendPinCode = asyncHandler(async(req, res, next) => {
+    if (req.user) {
+        await createPinCode(req.user)
+    } else if (req.body.email) {
+        const user = await Users.findOne({ where: { email: req.body.email, is_email_confirmed: false }})
+        if (!user) {
+            return next(new ErrorResponse(`Пользователь с указанным email не найден либо email уже подтвержден`, 400))
+        }
+        await createPinCode(user)
+    } else {
+        return next(new ErrorResponse(`Для повторной отправки пин-кода необходимо указать email, заданный при регистрации`, 400))
+    }
+
+    res.status(200).json({ success: true, data: {} })
 })
 
 // @desc    Auth user
@@ -51,6 +102,12 @@ exports.auth = asyncHandler(async(req, res, next) => {
 
     if (!isMatch){
         return next(new ErrorResponse('Пользователь с таким email и паролем не найден', 401))
+    }
+
+    const pinCode = await PinCodes.findOne({ where: { user_id: user.id }})
+
+    if (pinCode && pinCode.expiration_date > Date.now() && !req.user.is_email_confirmed) {
+        return next(new ErrorResponse('Email не подтвержден, для продолжения работы вам нужно подтвердить свой email', 403))
     }
 
     sendTokenResponse(user, 200, res)
@@ -283,4 +340,23 @@ const sendTokenResponse = (user, statusCode, res) => {
     }
 
     res.status(statusCode).json({ success: true, token })
+}
+
+const createPinCode = async (user) => {
+    let pinCode = {
+        user_id: user.id,
+        expiration_date: Date.now() + parseInt(env.PINCODE_EXPIRE, 10) * 60 * 1000 || Date.now() + 60 * 60 * 1000 // 60 min
+    }
+
+    pinCode = await PinCodes.create(pinCode)
+
+    try {
+        await sendEmail({
+            email: user.email,
+            subject: 'Пин-код для завершения регистрации',
+            message: `Пин-код для завершения регистрации: ${pinCode.pin_code}`
+        })
+    } catch (err) {
+        console.log(err)
+    }
 }

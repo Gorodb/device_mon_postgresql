@@ -77,6 +77,13 @@ exports.getTokenLinks = asyncHandler(async(req, res, next) => {
     res.status(200).json(res.advancedResults)
 })
 
+// @desc    Get all pin-codes links
+// @rout    GET /api/v1/admin/users/get_pin_codes
+// access   Private / Admin
+exports.getPinCodes = asyncHandler(async(req, res, next) => {
+    res.status(200).json(res.advancedResults)
+})
+
 exports.clearOldSessionsFromBlackList = asyncHandler(async (req, res, next) => {
     await SessionsBlackList.destroy({
         where: {

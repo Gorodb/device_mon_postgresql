@@ -52,6 +52,11 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       defaultValue: 'no-image'
     },
+    is_email_confirmed: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
     description: DataTypes.STRING,
     department_id: {
       allowNull: false,
@@ -72,6 +77,7 @@ module.exports = (sequelize, DataTypes) => {
     Users.hasOne(models.DevicesHolders, {foreignKey: 'previous_user_id'})
     Users.hasMany(models.SessionsBlackList, {foreignKey: 'user_id', onDelete: 'cascade'})
     Users.hasMany(models.TokensLinks, {foreignKey: 'user_id', onDelete: 'cascade'})
+    Users.hasMany(models.Pincodes, {foreignKey: 'user_id', onDelete: 'cascade'})
     Users.hasMany(models.ResetTokens, {foreignKey: 'user_id', onDelete: 'cascade'})
   }
 

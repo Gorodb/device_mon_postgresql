@@ -2,6 +2,7 @@ const express = require('express')
 const database = require('../models')
 const Users = database.Users
 const TokenLinks = database.TokensLinks
+const PinCodes = database.Pincodes
 const { protect, authorize } = require('../middleware/auth')
 const advancedResults = require('../middleware/advancedResults')
 const {
@@ -10,7 +11,8 @@ const {
     createUser,
     updateUser,
     deleteUser,
-    getTokenLinks
+    getTokenLinks,
+    getPinCodes
 } = require('../controllers/users')
 
 const router = express.Router()
@@ -36,5 +38,8 @@ router.route('/:id')
 
 router.route('/token_links/get_token_links')
     .get(advancedResults(TokenLinks), getTokenLinks)
+
+router.route('/pin_codes/get_pincodes')
+    .get(advancedResults(PinCodes), getPinCodes)
 
 module.exports = router

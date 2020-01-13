@@ -5,6 +5,7 @@ const database = require('../models')
 
 const SessionsBlackList = database.SessionsBlackList
 const Users = database.Users
+const PinCodes = database.Pincodes
 
 // Protect routes
 exports.protect = asyncHandler(async (req, res, next) => {
@@ -33,6 +34,13 @@ exports.protect = asyncHandler(async (req, res, next) => {
         if (req.user === null) {
             return next(new errorResponse('Нет доступа к ресурсу, необходима авторизация', 401))
         }
+
+        const pinCode = await PinCodes.findOne({ where: { user_id: req.user.id }})
+
+        if (pinCode && pinCode.expiration_date < Date.now() && !req.user.is_email_confirmed) {
+            return next(new errorResponse('Email не подтвержден, для продолжения работы вам нужно подтвердить свой email', 403))
+        }
+
         next()
     } catch (err) {
         return next(new errorResponse('Нет доступа к ресурсу, необходима авторизация', 401))

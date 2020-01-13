@@ -1,5 +1,5 @@
 const express = require('express')
-const { protect } = require('../middleware/auth')
+const { protect, isUser } = require('../middleware/auth')
 const {
     register,
     auth,
@@ -9,7 +9,9 @@ const {
     resetPassword,
     updateDetails,
     updatePassword,
-    uploadImage
+    uploadImage,
+    validatePinCode,
+    resendPinCode
 } = require('../controllers/auth')
 
 const router = express.Router()
@@ -18,6 +20,8 @@ router.post('/registration', register)
 router.post('/', auth)
 router.post('/logout', protect, logout)
 router.get('/me', protect, getMe)
+router.post('/validate_pin', isUser, validatePinCode)
+router.post('/resend_pin', isUser, resendPinCode)
 router.put('/updateDetails', protect, updateDetails)
 router.put('/updatePassword', protect, updatePassword)
 router.post('/forgotPassword', forgotPassword)
