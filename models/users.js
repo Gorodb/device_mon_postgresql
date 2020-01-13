@@ -26,13 +26,13 @@ module.exports = (sequelize, DataTypes) => {
       unique: true,
       validate: {
         checkEmail(value) {
-          const re = /^([a-zA-Z0-9_\.\-])+\@(([a-zA-Z0-9\-])+\.)*(rt\.ru)$/
+          const re = /^([a-zA-Z0-9_\.\-])+\@((([a-zA-Z0-9\-])+\.)*(rt\.ru)|(gmail\.com))$/
           if (value.match(re)[0] !== value) {
             throw new ErrorResponse(`Регистрация возможна только на внутренний email, ${value}`, 400)
           }
         },
         is: {
-          args: /^([a-zA-Z0-9_\.\-])+\@(([a-zA-Z0-9\-])+\.)*(rt\.ru)$/,
+          args: /^([a-zA-Z0-9_\.\-])+\@((([a-zA-Z0-9\-])+\.)*(rt\.ru)|(gmail\.com))$/,
           msg: 'Регистрация возможна только на внутренний email'
         }
       }
