@@ -3,3 +3,4 @@ node_modules
 public/uploads/images/*
 config/config.env
 config/config.js
+logs/*
