@@ -204,7 +204,7 @@ exports.forgotPassword = asyncHandler(async(req, res, next) => {
     })
 
     // Create reset url
-    const resetUrl = `${req.protocol}://${req.get('host')}/api/v1/auth/resetPassword/${resetToken}`
+    const resetUrl = `https://${req.get('host')}/api/v1/auth/resetPassword/${resetToken}`
 
     const message = `Чтобы сбросить пароль перейдите по ссылке из письма: \n\n ${resetUrl}`
 
