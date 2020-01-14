@@ -91,7 +91,6 @@ module.exports = (sequelize, DataTypes) => {
       options.attributes = {}
       options.attributes.exclude = [ 'createdAt', 'updatedAt' ]
       options.attributes.exclude = options.withPassword ? options.attributes.exclude : [...options.attributes.exclude, 'password']
-      options.attributes.exclude = options.withPassword ? options.attributes.exclude : [...options.attributes.exclude, 'password']
       options.include = [{
         model: sequelize.model('Departments'),
         as: 'department',

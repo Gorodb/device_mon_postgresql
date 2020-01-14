@@ -67,6 +67,9 @@ exports.validatePinCode = asyncHandler(async(req, res, next) => {
 // access   public
 exports.resendPinCode = asyncHandler(async(req, res, next) => {
     if (req.user) {
+        if (req.user.is_email_confirmed) {
+            return next(new ErrorResponse(`Email уже подтвержден`, 400))
+        }
         await createPinCode(req.user)
     } else if (req.body.email) {
         const user = await Users.findOne({ where: { email: req.body.email, is_email_confirmed: false }})

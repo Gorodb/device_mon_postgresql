@@ -1,7 +1,9 @@
+const Sequelize = require('sequelize')
 const jwt = require('jsonwebtoken')
 const asyncHandler = require('./async')
 const errorResponse = require('../utils/errorResponse')
 const database = require('../models')
+const Op = Sequelize.Op
 
 const SessionsBlackList = database.SessionsBlackList
 const Users = database.Users
@@ -26,7 +28,7 @@ exports.protect = asyncHandler(async (req, res, next) => {
         return next(new errorResponse('Нет доступа к ресурсу, необходима авторизация', 401))
     }
 
-    // Verify token
+    // Verify token and email confirmation
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET)
         req.user = await Users.findOne({ where: { id: decoded.id }})
@@ -35,9 +37,14 @@ exports.protect = asyncHandler(async (req, res, next) => {
             return next(new errorResponse('Нет доступа к ресурсу, необходима авторизация', 401))
         }
 
-        const pinCode = await PinCodes.findOne({ where: { user_id: req.user.id }})
+        const pinCodesCount = await PinCodes.count({
+            where: {
+                user_id: req.user.id,
+                expiration_date: { [Op.lte]: Date.now() }
+            }
+        })
 
-        if (pinCode && pinCode.expiration_date < Date.now() && !req.user.is_email_confirmed) {
+        if (!req.user.is_email_confirmed && pinCodesCount > 0) {
             return next(new errorResponse('Email не подтвержден, для продолжения работы вам нужно подтвердить свой email', 403))
         }
 
