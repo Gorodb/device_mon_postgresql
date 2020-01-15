@@ -19,13 +19,13 @@ exports.protect = asyncHandler(async (req, res, next) => {
 
     // Make sure token exists
     if (!token) {
-        return next(new errorResponse('Нет доступа к ресурсу, необходима авторизация', 401))
+        return next(new errorResponse('Необходима авторизация', 401))
     }
 
     // Check for token not in black list
     const isInBlackList = await SessionsBlackList.findOne({ where: {token}})
     if (isInBlackList) {
-        return next(new errorResponse('Нет доступа к ресурсу, необходима авторизация', 401))
+        return next(new errorResponse('Необходима авторизация', 401))
     }
 
     // Verify token and email confirmation
@@ -34,7 +34,7 @@ exports.protect = asyncHandler(async (req, res, next) => {
         req.user = await Users.findOne({ where: { id: decoded.id }})
 
         if (req.user === null) {
-            return next(new errorResponse('Нет доступа к ресурсу, необходима авторизация', 401))
+            return next(new errorResponse('Необходима авторизация', 401))
         }
 
         const pinCodesCount = await PinCodes.count({
@@ -50,7 +50,7 @@ exports.protect = asyncHandler(async (req, res, next) => {
 
         next()
     } catch (err) {
-        return next(new errorResponse('Нет доступа к ресурсу, необходима авторизация', 401))
+        return next(new errorResponse('Необходима авторизация', 401))
     }
 })
 

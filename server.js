@@ -73,7 +73,7 @@ app.use(cors())
 app.use(express.static(path.join(__dirname, 'public')))
 
 // Mount routers
-app.use('/api/v1/auth', auth)
+app.use('/api/v1', auth)
 app.use('/api/v1/admin/users', users)
 app.use('/api/v1/devices', devices)
 app.use('/api/v1/admin/devices', adminDevices)

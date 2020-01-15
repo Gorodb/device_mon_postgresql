@@ -17,7 +17,7 @@ const {
 const router = express.Router()
 
 router.post('/registration', register)
-router.post('/', auth)
+router.post('/auth', auth)
 router.post('/logout', protect, logout)
 router.get('/me', protect, getMe)
 router.post('/validate_pin', isUser, validatePinCode)
