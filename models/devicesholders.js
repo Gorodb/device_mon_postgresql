@@ -19,15 +19,21 @@ module.exports = (sequelize, DataTypes) => {
   DevicesHolders.associate = function(models) {
     DevicesHolders.belongsTo(models.Devices, {
       foreignKey: 'device_id',
-      as: 'device'
+      as: 'device',
+      foreignKeyConstraint: true,
+      onDelete: 'cascade'
     })
     DevicesHolders.belongsTo(models.Users, {
       foreignKey: 'current_user_id',
-      as: 'holder'
+      as: 'holder',
+      foreignKeyConstraint: true,
+      onDelete: 'cascade'
     })
     DevicesHolders.belongsTo(models.Users, {
       foreignKey: 'previous_user_id',
-      as: 'previousUser'
+      as: 'previousUser',
+      foreignKeyConstraint: true,
+      onDelete: 'set null'
     })
   };
   return DevicesHolders;

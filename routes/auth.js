@@ -11,7 +11,9 @@ const {
     updatePassword,
     uploadImage,
     validatePinCode,
-    resendPinCode
+    resendPinCode,
+    confirmEmail,
+    resendToken
 } = require('../controllers/auth')
 
 const router = express.Router()
@@ -20,6 +22,8 @@ router.post('/registration', register)
 router.post('/auth', auth)
 router.post('/logout', protect, logout)
 router.get('/me', protect, getMe)
+router.post('/confirm_email/:resetToken', confirmEmail)
+router.post('/resend_token', isUser, resendToken)
 router.post('/validate_pin', isUser, validatePinCode)
 router.post('/resend_pin', isUser, resendPinCode)
 router.put('/updateDetails', protect, updateDetails)

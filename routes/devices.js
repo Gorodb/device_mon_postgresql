@@ -1,7 +1,7 @@
 const express = require('express')
 const database = require('../models')
 const Devices = database.Devices
-const { isUser, filterByDepartment, protect } = require('../middleware/auth')
+const { isUser, isConfirmedUser, filterByDepartment, protect } = require('../middleware/auth')
 const advancedResults = require('../middleware/advancedResults')
 const {
     getDevice,
@@ -26,7 +26,7 @@ router.route('/:id')
     .get(getDevice)
     .put(protect, updateDevice)
 
-router.route('/:id/take_device').put(takeDevice)
+router.route('/:id/take_device').put(isConfirmedUser, takeDevice)
 router.route('/:id/return_to_prev').put(returnToPrevUser)
 router.route('/:id/return_to_default_Location').put(returnToDefaultLocation)
 

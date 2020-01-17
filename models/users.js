@@ -73,12 +73,12 @@ module.exports = (sequelize, DataTypes) => {
     })
     Users.hasMany(models.Devices, {foreignKey: 'owner_id'})
     Users.hasMany(models.Devices, {foreignKey: 'updated_by_user'})
-    Users.hasOne(models.DevicesHolders, {foreignKey: 'current_user_id', onDelete: 'cascade'})
-    Users.hasOne(models.DevicesHolders, {foreignKey: 'previous_user_id'})
-    Users.hasMany(models.SessionsBlackList, {foreignKey: 'user_id', onDelete: 'cascade'})
-    Users.hasMany(models.TokensLinks, {foreignKey: 'user_id', onDelete: 'cascade'})
-    Users.hasMany(models.Pincodes, {foreignKey: 'user_id', onDelete: 'cascade'})
-    Users.hasMany(models.ResetTokens, {foreignKey: 'user_id', onDelete: 'cascade'})
+    Users.hasOne(models.DevicesHolders, {foreignKey: 'current_user_id', onDelete: 'cascade', hooks: true })
+    Users.hasOne(models.DevicesHolders, {foreignKey: 'previous_user_id', onDelete: 'set null', hooks: true})
+    Users.hasMany(models.SessionsBlackList, {foreignKey: 'user_id', onDelete: 'cascade', hooks: true })
+    Users.hasMany(models.TokensLinks, {foreignKey: 'user_id', onDelete: 'cascade', hooks: true })
+    Users.hasMany(models.Pincodes, {foreignKey: 'user_id', onDelete: 'cascade', hooks: true })
+    Users.hasMany(models.ResetTokens, {foreignKey: 'user_id', onDelete: 'cascade', hooks: true })
   }
 
   Users.addHook('beforeCreate', async (user, options) => {

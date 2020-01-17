@@ -21,7 +21,9 @@ module.exports = (sequelize, DataTypes) => {
   PinCodes.associate = function(models) {
     PinCodes.belongsTo(models.Users, {
       foreignKey: 'user_id',
-      as: 'user'
+      as: 'user',
+      foreignKeyConstraint: true,
+      onDelete: 'cascade'
     })
   }
 

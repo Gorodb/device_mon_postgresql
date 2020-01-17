@@ -18,7 +18,9 @@ module.exports = (sequelize, DataTypes) => {
   SessionsBlackList.associate = function(models) {
     SessionsBlackList.belongsTo(models.Users, {
       foreignKey: 'user_id',
-      as: 'user'
+      as: 'user',
+      foreignKeyConstraint: true,
+      onDelete: 'cascade'
     })
   };
   return SessionsBlackList;

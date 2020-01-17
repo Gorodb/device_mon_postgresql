@@ -52,7 +52,7 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: 'device_type_id',
       as: 'deviceType'
     })
-    Devices.hasOne(models.DevicesHolders, {foreignKey: 'device_id', onDelete: 'cascade'})
+    Devices.hasOne(models.DevicesHolders, {foreignKey: 'device_id', onDelete: 'cascade', hooks: true })
   }
 
   Devices.addHook('beforeFind', (options) => {

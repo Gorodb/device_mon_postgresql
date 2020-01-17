@@ -29,8 +29,58 @@ exports.register = asyncHandler(async(req, res, next) => {
     let user = await Users.create({ name, email, phone, password, description, location, department_id })
 
     await createPinCode(user.dataValues)
+    await sendToken(user, req, res, next)
 
     sendTokenResponse(user, 200, res)
+})
+
+// @desc    Validate users email
+// @rout    PUT /api/v1/confirm_email/:resetToken
+// access   Public
+exports.confirmEmail = asyncHandler(async(req, res, next) => {
+    // Get hashed token
+    const resetPasswordToken = crypto
+        .createHash('sha256')
+        .update(req.params.resetToken)
+        .digest('hex')
+
+    const resetToken = await ResetTokens.findOne({ where: {
+            reset_password_token: resetPasswordToken,
+            reset_password_expire: { [Op.gt]: Date.now() },
+            action: 'register'
+        }
+    })
+
+    if (!resetToken) return next(new ErrorResponse('Токен не действителен', 400))
+
+    const user = await Users.findOne({ where: { id: resetToken.user_id }})
+
+    if (!user) return next(new ErrorResponse('Токен не действителен', 400))
+
+    // Set new password
+    await TokenLinks.destroy({ where: { user_id: user.id, action: 'register' }})
+    await ResetTokens.destroy({ where: { user_id: user.id, action: 'register' }})
+    await Users.update({ is_email_confirmed: true }, { where: { id: user.id }})
+    await PinCodes.destroy({ where: { user_id: user.id }})
+
+    res.status(200).json({ success: true, data: {} })
+})
+
+// @desc    Validate users email
+// @rout    PUT /api/v1/resendToken
+// access   Public
+exports.resendToken = asyncHandler(async(req, res, next) => {
+    let user
+    if (!req.body.email && !req.user) {
+        return next(new ErrorResponse(`Пожалуйста, укажите email`, 400))
+    }
+    if (!req.user) {
+        user = await Users.findOne({ where: { email: req.body.email, is_email_confirmed: false }})
+    }
+    if (!user) {
+        return next(new ErrorResponse(`Необходима регистрация либо email уже подтвержден`, 400))
+    }
+    await sendToken(user, req, res, next)
 })
 
 // @desc    Validate pin_code
@@ -41,6 +91,10 @@ exports.validatePinCode = asyncHandler(async(req, res, next) => {
 
     if (!pinCode) {
         return next(new ErrorResponse(`Необходимо указать пин-код`, 400))
+    }
+
+    if (!req.user.id) {
+        return next(new ErrorResponse(`Необходимо авторизоваться`, 400))
     }
 
     let pin = await PinCodes.findOne({
@@ -71,12 +125,6 @@ exports.resendPinCode = asyncHandler(async(req, res, next) => {
             return next(new ErrorResponse(`Email уже подтвержден`, 400))
         }
         await createPinCode(req.user)
-    } else if (req.body.email) {
-        const user = await Users.findOne({ where: { email: req.body.email, is_email_confirmed: false }})
-        if (!user) {
-            return next(new ErrorResponse(`Пользователь с указанным email не найден либо email уже подтвержден`, 400))
-        }
-        await createPinCode(user)
     } else {
         return next(new ErrorResponse(`Для повторной отправки пин-кода необходимо указать email, заданный при регистрации`, 400))
     }
@@ -105,12 +153,6 @@ exports.auth = asyncHandler(async(req, res, next) => {
 
     if (!isMatch){
         return next(new ErrorResponse('Пользователь с таким email и паролем не найден', 401))
-    }
-
-    const pinCode = await PinCodes.findOne({ where: { user_id: user.id }})
-
-    if (pinCode && pinCode.expiration_date > Date.now() && !req.user.is_email_confirmed) {
-        return next(new ErrorResponse('Email не подтвержден, для продолжения работы вам нужно подтвердить свой email', 403))
     }
 
     sendTokenResponse(user, 200, res)
@@ -192,15 +234,16 @@ exports.forgotPassword = asyncHandler(async(req, res, next) => {
     }
 
     // delete old tokens for user, if they exists
-    await TokenLinks.destroy({ where: { user_id: user.id }})
-    await ResetTokens.destroy({ where: { user_id: user.id }})
+    await TokenLinks.destroy({ where: { user_id: user.id, action: 'forgot_password' }})
+    await ResetTokens.destroy({ where: { user_id: user.id, action: 'forgot_password' }})
 
     // Get reset token
     const { resetToken, resetPasswordExpire , resetPasswordToken } = Users.getResetPasswordToken()
     const tokenLink = await ResetTokens.create({
         user_id: user.id,
         reset_password_token: resetPasswordToken,
-        reset_password_expire: resetPasswordExpire
+        reset_password_expire: resetPasswordExpire,
+        action: 'forgot_password'
     })
 
     // Create reset url
@@ -209,36 +252,29 @@ exports.forgotPassword = asyncHandler(async(req, res, next) => {
     const message = `Чтобы сбросить пароль перейдите по ссылке из письма: \n\n ${resetUrl}`
 
     try {
-        if (env.NODE_ENV === 'production') {
-            await sendEmail({
-                email: user.email,
-                subject: 'Password reset token',
-                message
-            })
-        } else {
-            await TokenLinks.create({user_id: user.id, link: resetUrl, expiration_date: resetPasswordExpire})
-            await sendEmail({
-                email: user.email,
-                subject: 'Password reset token',
-                message
-            })
-        }
+        await TokenLinks.create({user_id: user.id, link: resetUrl, action: 'forgot_password', expiration_date: resetPasswordExpire})
+        await sendEmail({
+            email: user.email,
+            subject: 'Сброс пароля',
+            message
+        })
         res.status(200).json({ success: true, data: 'Email отправлен' })
     } catch (err) {
         console.log(err)
         await ResetTokens.destroy({ where:
                 {
                     user_id: tokenLink.user_id,
-                    reset_password_expire: { [Op.lte]: Date.now() }
+                    reset_password_expire: { [Op.lte]: Date.now() },
+                    action: 'forgot_password'
                 }
         })
         await TokenLinks.destroy({ where:
                 {
                     user_id: tokenLink.user_id,
-                    expiration_date: {[Op.lte]: Date.now() }
+                    expiration_date: {[Op.lte]: Date.now() },
+                    action: 'forgot_password'
                 }
         })
-
         return next(new ErrorResponse('Не удалось отправить email', 500))
     }
 })
@@ -255,7 +291,8 @@ exports.resetPassword = asyncHandler(async(req, res, next) => {
 
     const resetToken = await ResetTokens.findOne({ where: {
             reset_password_token: resetPasswordToken,
-            reset_password_expire: { [Op.gt]: Date.now() }
+            reset_password_expire: { [Op.gt]: Date.now() },
+            action: 'forgot_password'
         }
     })
 
@@ -267,8 +304,8 @@ exports.resetPassword = asyncHandler(async(req, res, next) => {
 
     // Set new password
     const newPassword = await Users.cryptPassword(`${req.body.password}`)
-    await TokenLinks.destroy({ where: { user_id: user.id }})
-    await ResetTokens.destroy({ where: { user_id: user.id }})
+    await TokenLinks.destroy({ where: { user_id: user.id, action: 'forgot_password' }})
+    await ResetTokens.destroy({ where: { user_id: user.id, action: 'forgot_password' }})
     await Users.update({ password: newPassword }, { where: { id: user.id }})
 
     sendTokenResponse(user, 200, res)
@@ -361,5 +398,52 @@ const createPinCode = async (user) => {
         })
     } catch (err) {
         console.log(err)
+    }
+}
+
+const sendToken = async (user, req, res, next) => {
+    // delete old tokens for user, if they exists
+    await TokenLinks.destroy({ where: { user_id: user.id, action: 'register' }})
+    await ResetTokens.destroy({ where: { user_id: user.id, action: 'register'}})
+
+    // Get reset token
+    const { resetToken, resetPasswordExpire , resetPasswordToken } = Users.getResetPasswordToken()
+    const tokenLink = await ResetTokens.create({
+        user_id: user.id,
+        reset_password_token: resetPasswordToken,
+        reset_password_expire: resetPasswordExpire,
+        action: 'register'
+    })
+
+    // Create reset url
+    const resetUrl = `https://${req.get('host')}/api/v1/confirm_email/${resetToken}`
+
+    const message = `Для продолжения регистрации перейтиде по ссылке: \n\n ${resetUrl}`
+
+    try {
+        await TokenLinks.create({user_id: user.id, link: resetUrl, action: 'register', expiration_date: resetPasswordExpire})
+        await sendEmail({
+            email: user.email,
+            subject: 'Завершение регистрации',
+            message
+        })
+    } catch (err) {
+        console.log(err)
+        await ResetTokens.destroy({ where:
+                {
+                    user_id: tokenLink.user_id,
+                    reset_password_expire: { [Op.lte]: Date.now() },
+                    action: 'register'
+                }
+        })
+        await TokenLinks.destroy({ where:
+                {
+                    user_id: tokenLink.user_id,
+                    expiration_date: {[Op.lte]: Date.now() },
+                    action: 'register'
+                }
+        })
+
+        return next(new ErrorResponse('Не удалось отправить email', 500))
     }
 }

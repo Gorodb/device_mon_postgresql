@@ -63,6 +63,25 @@ exports.isUser = asyncHandler(async (req, res, next) => {
     next()
 })
 
+// Check for auth and return user info to response
+exports.isConfirmedUser = asyncHandler(async (req, res, next) => {
+    let dt = decodedToken(req)
+    if (dt) {
+        req.user = await Users.findOne({ where: { id: dt.id }})
+        const pinCodesCount = await PinCodes.count({
+            where: {
+                user_id: req.user.id,
+                expiration_date: { [Op.lte]: Date.now() }
+            }
+        })
+
+        if (!req.user.is_email_confirmed && pinCodesCount > 0) {
+            return next(new errorResponse('Email не подтвержден, для продолжения работы вам нужно подтвердить свой email', 403))
+        }
+    }
+    next()
+})
+
 // Grant access to specific roles
 exports.authorize = (...roles) => {
     return (req, res, next) => {
