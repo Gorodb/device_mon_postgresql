@@ -28,8 +28,20 @@ exports.register = asyncHandler(async(req, res, next) => {
 
     let user = await Users.create({ name, email, phone, password, description, location, department_id })
 
-    await createPinCode(user.dataValues)
-    await sendToken(user, req, res, next)
+    const pinCode = await createPinCode(user.dataValues)
+    const resetUrl = await sendToken(user, false, req, res, next)
+
+    try {
+        const message = `Для подтверждения email-а введите пинкод: ${pinCode}, или перейтиде по ссылке из письма: \n\n ${resetUrl}`
+        await sendEmail({
+            email: user.email,
+            subject: 'Завершение регистрации',
+            message
+        })
+    } catch (err) {
+        console.log(err)
+        return next(new ErrorResponse('Не удалось отправить email', 500))
+    }
 
     sendTokenResponse(user, 200, res)
 })
@@ -80,7 +92,7 @@ exports.resendToken = asyncHandler(async(req, res, next) => {
     if (!user) {
         return next(new ErrorResponse(`Необходима регистрация либо email уже подтвержден`, 400))
     }
-    await sendToken(user, req, res, next)
+    await sendToken(user, true, req, res, next)
 })
 
 // @desc    Validate pin_code
@@ -110,8 +122,10 @@ exports.validatePinCode = asyncHandler(async(req, res, next) => {
         return next(new ErrorResponse(`Пин-код уже не действителен, запросите пин-код повторно`, 400))
     }
 
-    await PinCodes.destroy({ where: { user_id: req.user.id }})
     await Users.update({ is_email_confirmed: true }, { where: { id: req.user.id }})
+    await PinCodes.destroy({ where: { user_id: req.user.id }})
+    await TokenLinks.destroy({ where: { user_id: req.user.id, action: 'register' }})
+    await ResetTokens.destroy({ where: { user_id: req.user.id, action: 'register' }})
 
     res.status(200).json({ success: true, data: {} })
 })
@@ -124,7 +138,7 @@ exports.resendPinCode = asyncHandler(async(req, res, next) => {
         if (req.user.is_email_confirmed) {
             return next(new ErrorResponse(`Email уже подтвержден`, 400))
         }
-        await createPinCode(req.user)
+        await createPinCode(req.user, true)
     } else {
         return next(new ErrorResponse(`Для повторной отправки пин-кода необходимо указать email, заданный при регистрации`, 400))
     }
@@ -382,7 +396,7 @@ const sendTokenResponse = (user, statusCode, res) => {
     res.status(statusCode).json({ success: true, token })
 }
 
-const createPinCode = async (user) => {
+const createPinCode = async (user, withSendingEmail = false) => {
     let pinCode = {
         user_id: user.id,
         expiration_date: Date.now() + parseInt(env.PINCODE_EXPIRE, 10) * 60 * 1000 || Date.now() + 60 * 60 * 1000 // 60 min
@@ -390,25 +404,29 @@ const createPinCode = async (user) => {
 
     pinCode = await PinCodes.create(pinCode)
 
-    try {
-        await sendEmail({
-            email: user.email,
-            subject: 'Пин-код для завершения регистрации',
-            message: `Пин-код для завершения регистрации: ${pinCode.pin_code}`
-        })
-    } catch (err) {
-        console.log(err)
+    if (withSendingEmail) {
+        try {
+            await sendEmail({
+                email: user.email,
+                subject: 'Пин-код для завершения регистрации',
+                message: `Пин-код для завершения регистрации: ${pinCode.pin_code}`
+            })
+        } catch (err) {
+            console.log(err)
+        }
     }
+
+    return pinCode
 }
 
-const sendToken = async (user, req, res, next) => {
+const sendToken = async (user, withSendingEmail, req, res, next) => {
     // delete old tokens for user, if they exists
     await TokenLinks.destroy({ where: { user_id: user.id, action: 'register' }})
     await ResetTokens.destroy({ where: { user_id: user.id, action: 'register'}})
 
     // Get reset token
     const { resetToken, resetPasswordExpire , resetPasswordToken } = Users.getResetPasswordToken()
-    const tokenLink = await ResetTokens.create({
+    await ResetTokens.create({
         user_id: user.id,
         reset_password_token: resetPasswordToken,
         reset_password_expire: resetPasswordExpire,
@@ -417,33 +435,20 @@ const sendToken = async (user, req, res, next) => {
 
     // Create reset url
     const resetUrl = `https://${req.get('host')}/api/v1/confirm_email/${resetToken}`
+    await TokenLinks.create({user_id: user.id, link: resetUrl, action: 'register', expiration_date: resetPasswordExpire})
 
-    const message = `Для продолжения регистрации перейтиде по ссылке: \n\n ${resetUrl}`
-
-    try {
-        await TokenLinks.create({user_id: user.id, link: resetUrl, action: 'register', expiration_date: resetPasswordExpire})
-        await sendEmail({
-            email: user.email,
-            subject: 'Завершение регистрации',
-            message
-        })
-    } catch (err) {
-        console.log(err)
-        await ResetTokens.destroy({ where:
-                {
-                    user_id: tokenLink.user_id,
-                    reset_password_expire: { [Op.lte]: Date.now() },
-                    action: 'register'
-                }
-        })
-        await TokenLinks.destroy({ where:
-                {
-                    user_id: tokenLink.user_id,
-                    expiration_date: {[Op.lte]: Date.now() },
-                    action: 'register'
-                }
-        })
-
-        return next(new ErrorResponse('Не удалось отправить email', 500))
+    if (withSendingEmail) {
+        try {
+            const message = `Для подтверждения email-а перейтиде по ссылке: \n\n ${resetUrl}`
+            await sendEmail({
+                email: user.email,
+                subject: 'Завершение регистрации',
+                message
+            })
+        } catch (err) {
+            console.log(err)
+            return next(new ErrorResponse('Не удалось отправить email', 500))
+        }
     }
+    return resetUrl
 }
