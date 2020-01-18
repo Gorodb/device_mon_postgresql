@@ -416,7 +416,7 @@ const createPinCode = async (user, withSendingEmail = false) => {
         }
     }
 
-    return pinCode
+    return pinCode.pin_code
 }
 
 const sendToken = async (user, withSendingEmail, req, res, next) => {
