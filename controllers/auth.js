@@ -32,7 +32,7 @@ exports.register = asyncHandler(async(req, res, next) => {
     const resetUrl = await sendToken(user, false, req, res, next)
 
     try {
-        const message = `Для подтверждения email-а введите пинкод: ${pinCode}, или перейтиде по ссылке из письма: \n\n ${resetUrl}`
+        const message = `Для подтверждения email-а введите пинкод: ${pinCode} \n\n Или перейтиде по ссылке из письма: \n\n ${resetUrl}`
         await sendEmail({
             email: user.email,
             subject: 'Завершение регистрации',
