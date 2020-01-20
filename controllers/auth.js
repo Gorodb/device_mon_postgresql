@@ -21,6 +21,7 @@ const env = process.env
 // access   public
 exports.register = asyncHandler(async(req, res, next) => {
     let { name, email, phone, password, description, location, department_id } = req.body
+    email = email.toString().trim().toLowerCase()
 
     if (await Users.findOne({ where: { email: email }})) {
         return next(new ErrorResponse(`Пользователь с email ${email} уже существует`, 400))
