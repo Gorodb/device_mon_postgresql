@@ -24,7 +24,7 @@ exports.register = asyncHandler(async(req, res, next) => {
     email = email.toString().trim().toLowerCase()
 
     if (await Users.findOne({ where: { email: email }})) {
-        return next(new ErrorResponse(`Пользователь с email ${email} уже существует`, 400))
+        return next(new ErrorResponse(`Пользователь с email ${email} уже зарегистрирован`, 400))
     }
 
     let user = await Users.create({ name, email, phone, password, description, location, department_id })

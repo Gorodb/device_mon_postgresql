@@ -14,7 +14,6 @@ module.exports = (sequelize, DataTypes) => {
       autoIncrement: true,
       primaryKey: true,
       type: DataTypes.INTEGER
-
     },
     name: {
       type: DataTypes.STRING,
@@ -26,14 +25,10 @@ module.exports = (sequelize, DataTypes) => {
       unique: true,
       validate: {
         checkEmail(value) {
-          const re = /^([a-zA-Z0-9_\.\-])+\@((([a-zA-Z0-9\-])+\.)*(rt\.ru)|(gmail\.com))$/
-          if (value.match(re)[0] !== value) {
-            throw new ErrorResponse(`Регистрация возможна только на внутренний email, ${value}`, 400)
+          const re = /^([a-zA-Z0-9_\.\-])+\@((([a-zA-Z0-9\-])+\.)*(rt\.ru)|(gmail\.com))$/g
+          if (value.match(re) === null) {
+            throw new ErrorResponse(`Регистрация возможна только на внутренний email`, 400)
           }
-        },
-        is: {
-          args: /^([a-zA-Z0-9_\.\-])+\@((([a-zA-Z0-9\-])+\.)*(rt\.ru)|(gmail\.com))$/,
-          msg: 'Регистрация возможна только на внутренний email'
         }
       }
     },
