@@ -6,7 +6,7 @@ const env = process.env.NODE_ENV || 'development'
 const config = require('../config/config')[env]
 const db = {}
 
-console.log(JSON.stringify(config).yellow)
+console.log(JSON.stringify(config))
 
 let sequelize
 if (config.environment === 'production') {
