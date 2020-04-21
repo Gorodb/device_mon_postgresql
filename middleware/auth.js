@@ -108,9 +108,9 @@ exports.modifiedUser = asyncHandler(async (req, res, next) => {
 
 // Filter devices by user location
 exports.filterByDepartment = asyncHandler(async (req, res, next) => {
-    let department = req.cookies.department_id ? req.cookies.department_id : req.headers.department_id
+    let department = req.cookies.department ? req.cookies.department : req.headers.department
     if (!department && req.user) {
-        department = req.user.department_id
+        department = req.user.department
     }
 
     if (!department) {
