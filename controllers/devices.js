@@ -20,7 +20,7 @@ exports.getDevice = asyncHandler(async(req, res, next) => {
         return next(new ErrorResponse(`Устройства с id ${req.params.id} не найдено`, 404))
     }
 
-    res.status(200).json({ success: true, data: device })
+    res.status(200).json(device)
 })
 
 // @desc    Create device
@@ -32,7 +32,7 @@ exports.createDevice = asyncHandler(async(req, res, next) => {
     let device = await Devices.create(body)
     device = await Devices.findOne({ where: { id: device.id }})
 
-    res.status(201).json({ success: true, data: device})
+    res.status(201).json(device)
 })
 
 // @desc    Update device
@@ -50,7 +50,7 @@ exports.updateDevice = asyncHandler(async(req, res, next) => {
 
     device = await Devices.findOne({ where: { id: req.params.id }})
 
-    res.status(200).json({ success: true, data: device})
+    res.status(200).json(device)
 })
 
 // @desc    Delete device
@@ -63,7 +63,7 @@ exports.deleteDevice = asyncHandler(async(req, res, next) => {
         return next(new ErrorResponse(`Устройства с id ${req.params.id} не найдено`, 404))
     }
 
-    res.status(200).json({ success: true, data: {} })
+    res.status(200).json({ success: true })
 })
 
 // @desc    Update device's department id
@@ -80,7 +80,7 @@ exports.updateDepartment = asyncHandler(async(req, res, next) => {
     }
     device = await Devices.findOne({ where: { id: req.params.id }})
 
-    res.status(200).json({ success: true, data: device})
+    res.status(200).json(device)
 })
 
 // @desc    Change device owner
@@ -98,8 +98,9 @@ exports.changeDeviceOwner = asyncHandler(async(req, res, next) => {
 
     device = await findById(req.params.id)
 
-    res.status(200).json({ success: true, data: device })
+    res.status(200).json(device)
 })
 
 const findById = async (id) => Devices.findOne({ where: { id: id }})
+
 const updateDeviceById = async (body, id) => Devices.update({body}, { where: { id: id }})

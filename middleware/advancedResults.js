@@ -68,10 +68,9 @@ const advancedResults = (model, join = {}, includes) => async (req, res, next) =
     pagination.pages = Math.ceil(total / limit)
 
     res.advancedResults = {
-        success: true,
         count: total,
         pagination,
-        data: results
+        items: results
     }
 
     next()

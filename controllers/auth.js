@@ -76,7 +76,7 @@ exports.confirmEmail = asyncHandler(async(req, res, next) => {
     await Users.update({ is_email_confirmed: true }, { where: { id: user.id }})
     await PinCodes.destroy({ where: { user_id: user.id }})
 
-    res.status(200).json({ success: true, data: {} })
+    res.status(200).json({ success: true })
 })
 
 // @desc    Validate users email
@@ -128,7 +128,7 @@ exports.validatePinCode = asyncHandler(async(req, res, next) => {
     await TokenLinks.destroy({ where: { user_id: req.user.id, action: 'register' }})
     await ResetTokens.destroy({ where: { user_id: req.user.id, action: 'register' }})
 
-    res.status(200).json({ success: true, data: {} })
+    res.status(200).json({ success: true })
 })
 
 // @desc    Resend pin_code
@@ -144,7 +144,7 @@ exports.resendPinCode = asyncHandler(async(req, res, next) => {
         return next(new ErrorResponse(`Для повторной отправки пин-кода необходимо указать email, заданный при регистрации`, 400))
     }
 
-    res.status(200).json({ success: true, data: {} })
+    res.status(200).json({ success: true })
 })
 
 // @desc    Auth user
@@ -189,7 +189,7 @@ exports.logout = asyncHandler(async(req, res, next) => {
         user_id: req.user.id
     })
 
-    res.status(200).json({ success: true, data: {} })
+    res.status(200).json({ success: true })
 })
 
 // @desc    Get current logged in user
@@ -198,7 +198,7 @@ exports.logout = asyncHandler(async(req, res, next) => {
 exports.getMe = asyncHandler(async(req, res, next) => {
     const user = await Users.findById(req.user.id)
 
-    res.status(200).json({ success: true, data: user })
+    res.status(200).json(user)
 })
 
 // @desc    Update user details
@@ -218,7 +218,7 @@ exports.updateDetails = asyncHandler(async(req, res, next) => {
 
     user = await Users.findOne({ where: { id: req.user.id }})
 
-    res.status(200).json({ success: true, data: user, message: 'Информация успешно обновлена' })
+    res.status(200).json(user)
 })
 
 // @desc    Update password
@@ -394,7 +394,7 @@ const sendTokenResponse = (user, statusCode, res) => {
         options.secure = true
     }
 
-    res.status(statusCode).json({ success: true, token })
+    res.status(statusCode).json({ token })
 }
 
 const createPinCode = async (user, withSendingEmail = false) => {

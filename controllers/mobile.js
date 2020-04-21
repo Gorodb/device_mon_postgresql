@@ -16,5 +16,5 @@ exports.updateDevice = asyncHandler(async(req, res, next) => {
 
     device = await Devices.findOne({ id: req.params.id })
 
-    res.status(200).json({ success: true, data: device})
+    res.status(200).json(device)
 })

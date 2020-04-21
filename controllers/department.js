@@ -18,7 +18,7 @@ exports.getDepartment = asyncHandler(async(req, res, next) => {
     if (!department) {
         return next(new ErrorResponse(`Подразделение с id ${req.params.id} не найдено`, 404))
     }
-    res.status(200).json({ success: true, data: department })
+    res.status(200).json(department)
 })
 
 // @desc    Create new department
@@ -31,7 +31,7 @@ exports.createDepartment = asyncHandler(async(req, res, next) => {
         return next(new ErrorResponse(`Не удалось создать подразделение`, 500))
     }
 
-    res.status(201).json({ success: true, data: department })
+    res.status(201).json(department)
 })
 
 // @desc    Update department
@@ -46,7 +46,7 @@ exports.updateDepartment = asyncHandler(async(req, res, next) => {
     department = await Department.update({ name, description }, { where: { id: Number(req.params.id) } })
     department = await Department.findOne({ where: { id: req.params.id }})
 
-    res.status(200).json({ success: true, data: department })
+    res.status(200).json(department)
 })
 
 // @desc    Delete department
@@ -59,5 +59,5 @@ exports.deleteDepartment = asyncHandler(async(req, res, next) => {
 
     await Department.destroy({ where: { id: Number(req.params.id) } })
 
-    res.status(200).json({ success: true, data: {} })
+    res.status(200).json({ success: true })
 })

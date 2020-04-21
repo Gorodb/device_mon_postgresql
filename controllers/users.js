@@ -24,7 +24,7 @@ exports.getUser = asyncHandler(async(req, res, next) => {
         return next(new ErrorResponse(`Пользователь с id ${req.params.id} не найден`, 400))
     }
 
-    res.status(200).json({ success: true, data: user })
+    res.status(200).json(user)
 })
 
 // @desc    Create user
@@ -33,7 +33,7 @@ exports.getUser = asyncHandler(async(req, res, next) => {
 exports.createUser = asyncHandler(async(req, res, next) => {
     const user = await Users.create(req.body)
 
-    res.status(201).json({ success: true, data: user })
+    res.status(201).json(user)
 })
 
 // @desc    Update user
@@ -52,7 +52,7 @@ exports.updateUser = asyncHandler(async(req, res, next) => {
     await Users.update(req.body, { where: { id: req.params.id }})
     user = await Users.findById(req.params.id)
 
-    res.status(200).json({ success: true, data: user })
+    res.status(200).json(user)
 })
 
 // @desc    Delete user
@@ -67,7 +67,7 @@ exports.deleteUser = asyncHandler(async(req, res, next) => {
 
     await user.destroy({ where: { id: req.params.id }})
 
-    res.status(200).json({ success: true, data: {} })
+    res.status(200).json({ success: true })
 })
 
 // @desc    Get all forgot_token links

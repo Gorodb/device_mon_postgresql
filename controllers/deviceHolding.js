@@ -1,6 +1,4 @@
 const database = require('../models')
-const Users = database.Users
-const Devices = database.Devices
 const DevicesHolders = database.DevicesHolders
 const ErrorResponse = require('../utils/errorResponse')
 const asyncHandler = require('../middleware/async')
@@ -31,7 +29,7 @@ exports.takeDevice = asyncHandler(async(req, res, next) => {
     }
     heldDevice = await DevicesHolders.findOne({ where: { device_id: req.params.id }})
 
-    res.status(200).json({ success: true, data: heldDevice })
+    res.status(200).json(heldDevice)
 })
 
 // @desc    Return device to prev user
@@ -57,14 +55,13 @@ exports.returnToPrevUser = asyncHandler(async(req, res, next) => {
 
     heldDevice = await DevicesHolders.findOne({ where: { device_id: req.params.id }})
 
-    res.status(200).json({ success: true, data: heldDevice })
+    res.status(200).json(heldDevice)
 })
 
 // @desc    Return device to default location or return and set new default location
 // @rout    PUT /api/v1/auth/devices/:id/return_to_default_Location
 // access   public
 exports.returnToDefaultLocation = asyncHandler(async(req, res, next) => {
-    let userId = req.user ? req.user.id : req.body.userId
     let heldDevice = await DevicesHolders.findOne({ where: { device_id: req.params.id }})
 
     if (!heldDevice) {
@@ -73,5 +70,5 @@ exports.returnToDefaultLocation = asyncHandler(async(req, res, next) => {
 
     await DevicesHolders.destroy({ where: { device_id: req.params.id }})
 
-    res.status(200).json({ success: true, data: {} })
+    res.status(200).json({ success: true })
 })

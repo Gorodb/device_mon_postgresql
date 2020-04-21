@@ -20,7 +20,7 @@ exports.getDeviceType = asyncHandler(async(req, res, next) => {
         return next(new ErrorResponse(`Тип устройств с id ${req.params.id} не найден`, 400))
     }
 
-    res.status(200).json({ success: true, data: deviceType })
+    res.status(200).json(deviceType)
 })
 
 // @desc    Create device_type
@@ -29,7 +29,7 @@ exports.getDeviceType = asyncHandler(async(req, res, next) => {
 exports.createDeviceType = asyncHandler(async(req, res, next) => {
     const deviceType = await DeviceTypes.create(req.body)
 
-    res.status(201).json({ success: true, data: deviceType })
+    res.status(201).json(deviceType)
 })
 
 // @desc    Update device_type
@@ -45,7 +45,7 @@ exports.updateDeviceType = asyncHandler(async(req, res, next) => {
     deviceType = await DeviceTypes.update(req.body, { where: { id: Number(req.params.id) } })
     deviceType = await DeviceTypes.findOne({ where: { id: Number(req.params.id) } })
 
-    res.status(200).json({ success: true, data: deviceType })
+    res.status(200).json(deviceType)
 })
 
 // @desc    Delete device_type
@@ -60,5 +60,5 @@ exports.deleteDeviceType = asyncHandler(async(req, res, next) => {
 
     await DeviceTypes.destroy({ where: { id: Number(req.params.id) } })
 
-    res.status(200).json({ success: true, data: {} })
+    res.status(200).json({ success: true })
 })
